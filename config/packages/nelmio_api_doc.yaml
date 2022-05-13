@@ -1,0 +1,52 @@
+nelmio_api_doc:
+    documentation:
+        # servers:
+        #   - url: http://api.example.com/unsafe
+        #     description: API over HTTP
+        #   - url: https://api.example.com/secured
+        #     description: API over HTTPS
+        info:
+            title: Cometa_rest_api
+            description: Affiliate programm 
+            version: 1.0.0
+        # components:
+        #     securitySchemes:
+        #         Bearer:
+        #             type: http
+        #             scheme: bearer
+        #             bearerFormat: JWT
+        # security:
+        #     - Bearer: []
+        paths:
+            /:
+                get:
+                    description: user2
+                    tags:
+                        - user2
+                    responses:
+                        200:
+                            description: ok
+                            content: 
+                                application/json: 
+                                    schema:
+                                        type: object
+                                        properties:
+                                            status: { type: string, example: 'ok'}
+            /api/pakage:
+                post:
+                    description: pakage 
+                    tags:
+                        - pakage                               
+        # tags: 
+        #    - name: User_user
+        #      description: uuuuu_nnnnn
+        #    - name: pakage_pakage
+
+            
+            
+
+    areas: # to filter documented areas
+         
+        path_patterns:
+            - ^/api(?!(/doc|/doc.json)$) # Accepts routes under /api except /api/doc
+         
