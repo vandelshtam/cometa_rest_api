@@ -9,12 +9,12 @@ kernel:
 # defaults: { _controller: nelmio_api_doc.controller.swagger_ui }
 
 user_controller:
-   path: /
+   path: /api/user
    controller: App\src\Controller\UserController
    methods: [ GET ]
 
-pakage_controller:
-   path: /
-   controller: App\src\Controller\PakageController
-   methods: [ GET ]
+pakege_controller:
+   path: /api/pakege
+   controller: App\src\Controller\PakegeController
+   methods: [ GET, POST ]
    

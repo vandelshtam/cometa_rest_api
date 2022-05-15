@@ -96,10 +96,13 @@
                         <a class="nav-link text-light" href="{{ path('app_user') }}">Правила и акции</a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-light" href="{{ path('app_pakage') }}">Обзор пакетов</a>
+                        <a class="nav-link text-light" href="{{ path('app_user') }}">Обзор пакетов</a>
                         </li>
                         <li>
-                        <a class="nav-link text-light" href="{{ path('app_user_name',{'id': 3}) }}" style="color: rgb(72, 109, 169);">Мой баланс</a>
+                        <a class="nav-link text-light" href="{{ path('app_user_show',{'id': 3}) }}" style="color: rgb(72, 109, 169);">Мой баланс</a>
+                        </li>
+                         <li>
+                        <a class="nav-link text-light" href="{{ path('app_pakege_new',{'user_id': 3}) }}" style="color: rgb(72, 109, 169);">новый пакет</a>
                         </li>
                         <li>
                         <a class="nav-link text-light" href="{{ path('app_user') }}" style="color: rgb(72, 109, 169);">Мой кошелек</a>
@@ -112,7 +115,34 @@
                 </div>
             </nav>
             {% endblock header %}
-           
+            {% for label, messages in app.flashes(['success', 'notice']) %}
+            {% for message in messages %}
+                <div class="alert alert-success rounded-0" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            {% endfor %}
+            {% for label, messages in app.flashes(['info', 'notice']) %}
+                        {% for message in messages %}
+                            <div class="alert alert-info rounded-0" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+            {% endfor %}
+            {% for label, messages in app.flashes(['danger', 'notice']) %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger rounded-0" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+            {% endfor %}
+            {% for label, messages in app.flashes(['warning', 'notice']) %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger rounded-0" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}            
+            {% endfor %}
         </head>
         </header>
     {% endblock header_block %}

@@ -63,4 +63,48 @@ class UserRepository extends ServiceEntityRepository
 //            ->getOneOrNullResult()
 //        ;
 //    }
+
+/**
+     * @return User[] Returns an array of User objects
+     */
+    
+    public function findByExampleField($value)
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.exampleField = :val')
+            ->setParameter('val', $value)
+            ->orderBy('u.id', 'ASC')
+            ->setMaxResults(100000)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+    
+
+    /*
+    public function findOneBySomeField($value): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.exampleField = :val')
+            ->setParameter('val', $value)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
+    */
+
+
+    public function findOneByIdJoinedToPakege(int $userId): ?User
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT p, c
+            FROM App\Entity\User p
+            INNER JOIN p.pakeges c
+            WHERE p.id = :id'
+        )->setParameter('id', $userId);
+
+        return $query->getOneOrNullResult();
+    }
 }

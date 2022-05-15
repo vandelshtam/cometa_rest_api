@@ -18,11 +18,11 @@ nelmio_api_doc:
         # security:
         #     - Bearer: []
         paths:
-            /:
+            /api/user:
                 get:
-                    description: user2
+                    description: Get all users
                     tags:
-                        - user2
+                        - users
                     responses:
                         200:
                             description: ok
@@ -32,11 +32,104 @@ nelmio_api_doc:
                                         type: object
                                         properties:
                                             status: { type: string, example: 'ok'}
-            /api/pakage:
+            /api/user/{userId}:
                 post:
-                    description: pakage 
+                    description: Show user
                     tags:
-                        - pakage                               
+                        - users
+                    parameters:
+                        - in: query
+                          name: user
+                          required: true
+                          schema:
+                            type: string
+                            
+                    responses:
+                        200:
+                            description: user data
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: #/components/schemas/UserResponse
+            /api/user/{id}:
+                get:
+                    description: Show user Id
+                    tags:
+                        - User management
+                    parameters:
+                        - in: path
+                          name: userId
+                          required: true
+                          schema:
+                            type: string
+                    # parameters:
+                        - in: path
+                          name: email
+                          required: true
+                          schema:
+                            type: string
+                            
+                    responses:
+                        200:
+                            description: user data Id
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: #/components/schemas/UserResponse
+                    # parameters:
+                    #     - in: query
+                    #       name: name
+                    #       schema:
+                    #         type: string
+                    # responses:
+                    #     200:
+                    #         description: name data
+                    #         content: 
+                    #             application/json: 
+                    #                 schema: 
+                    #                     $ref: #/components/schemas/UserResponse    
+                # get:
+                #     description: Show user
+                #     tags:
+                #         - user
+                #     responses:
+                #         200:
+                #             description: ok
+                #             content: 
+                #                 application/json: 
+                #                     schema:
+                #                         type: object
+                #                         properties:
+                #                             status: { type: string, example: 'ok'}
+            /api/pakege/new/{user_id}:
+                post:
+                    description: New pakage 
+                    tags:
+                        - Package management 
+                    parameters:
+                        - in: path
+                          name: user_id
+                          required: true
+                          schema:
+                            type: string
+                        - in: query
+                          name: referral_link
+                          required: true
+                          schema:
+                            type: string
+                        - in: query
+                          name: pakage_table_id
+                          required: true
+                          schema:
+                            type: string
+                            
+                    responses:
+                        200:
+                            description: New pakage
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: #/components/schemas/UserResponse                                  
         # tags: 
         #    - name: User_user
         #      description: uuuuu_nnnnn
