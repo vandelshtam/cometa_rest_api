@@ -118,18 +118,105 @@ nelmio_api_doc:
                           schema:
                             type: string
                         - in: query
+                          name: email_user
+                          required: true
+                          schema:
+                            type: string
+                        - in: query
                           name: pakage_table_id
                           required: true
                           schema:
                             type: string
-                            
+                         
+                    
                     responses:
                         200:
                             description: New pakage
                             content: 
                                 application/json: 
                                     schema: 
-                                        $ref: #/components/schemas/UserResponse                                  
+                                        $ref: #/components/schemas/UserResponse 
+            /api/pakege/show/{user_id}:
+                get:
+                    description: Show user pakages 
+                    tags:
+                        - Package management 
+                    parameters:
+                        - in: path
+                          name: user_id
+                          required: true
+                          schema:
+                            type: string
+                    responses:
+                        200:
+                            description: Show user pakages
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: #/components/schemas/UserResponse 
+            /api/referral/new/{pakage_id}:
+                post:
+                    description: Create New referral 
+                    tags:
+                        - Referral management 
+                    parameters:
+                        - in: path
+                          name: pakage_id
+                          required: true
+                          schema:
+                            type: string
+                        - in: query
+                          name: user_id
+                          required: true
+                          schema:
+                            type: string
+                        - in: query
+                          name: referral_name
+                          required: true
+                          schema:
+                            type: string
+                    responses:
+                        200:
+                            description: Create New referral network
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: #/components/schemas/UserResponse 
+            /api/network/new/{pakage_id}:
+                post:
+                    description: Create New network user 
+                    tags:
+                        - Network management 
+                    parameters:
+                        - in: path
+                          name: pakage_id
+                          required: true
+                          schema:
+                            type: string
+                        # - in: query
+                        #   name: user_id
+                        #   required: true
+                        #   schema:
+                        #     type: string
+                        # - in: query
+                        #   name: referral_link
+                        #   required: true
+                        #   schema:
+                        #     type: string
+                    responses:
+                        200:
+                            description: Create New network user
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: #/components/schemas/UserResponse 
+                    # requestBody:
+                    #     description: A JSON object containing pet information
+                    #     content:
+                    #     application/json:
+                    #         schema:
+                    #         oneOf:
+                    #             - $ref: #/components/schemas/UserResponse                                                      
         # tags: 
         #    - name: User_user
         #      description: uuuuu_nnnnn

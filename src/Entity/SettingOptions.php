@@ -61,6 +61,12 @@ class SettingOptions
     #[ORM\Column(type: 'integer', nullable: true)]
     private $start_day;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private $privileget_members;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private $fast_start;
+
 
     public function getId(): ?int
     {
@@ -232,6 +238,30 @@ class SettingOptions
     public function setStartDay(?int $start_day): self
     {
         $this->start_day = $start_day;
+
+        return $this;
+    }
+
+    public function getPrivilegetMembers(): ?int
+    {
+        return $this->privileget_members;
+    }
+
+    public function setPrivilegetMembers(?int $privileget_members): self
+    {
+        $this->privileget_members = $privileget_members;
+
+        return $this;
+    }
+
+    public function getFastStart(): ?\DateTimeInterface
+    {
+        return $this->fast_start;
+    }
+
+    public function setFastStart(?\DateTimeInterface $fast_start): self
+    {
+        $this->fast_start = $fast_start;
 
         return $this;
     }

@@ -17,4 +17,14 @@ pakege_controller:
    path: /api/pakege
    controller: App\src\Controller\PakegeController
    methods: [ GET, POST ]
+
+list_referral_networks_controller:
+   path: /api/referral
+   controller: App\src\Controller\ListReferralNetworksController
+   methods: [ GET, POST ]
+
+referral_network_controller:
+   path: /api/network
+   controller: App\src\Controller\ReferralNetworkController
+   methods: [ GET, POST ]
    

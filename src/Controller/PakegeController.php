@@ -6,15 +6,17 @@ use App\Entity\User;
 use App\Entity\Pakege;
 use App\Entity\TokenRate;
 use App\Entity\TablePakage;
+use App\Entity\ReferralNetwork;
 use App\Entity\TransactionTable;
 use App\Repository\UserRepository;
 use App\Repository\PakegeRepository;
+use App\Repository\SavingMailRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use ApiPlatform\Core\Annotation\ApiResource;
-use App\Entity\ReferralNetwork;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Mailer\MailerInterface;
 use App\Repository\TransactionTableRepository;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -31,7 +33,7 @@ class PakegeController extends AbstractController
 {
    
     #[Route('/new/{user_id}', name: 'app_pakege_new')]
-    public function newPakage(Request $request,UserRepository $userRepository,PakegeRepository $pakegeRepository,EntityManagerInterface $entityManager, TransactionTableRepository $transactionTableRepository,SerializerInterface $serializer,ManagerRegistry $doctrine,int $user_id):Response 
+    public function newPakage(Request $request,UserRepository $userRepository,PakegeRepository $pakegeRepository,EntityManagerInterface $entityManager, TransactionTableRepository $transactionTableRepository,SerializerInterface $serializer,ManagerRegistry $doctrine, MailerInterface $mailer,  MailerController $mailerController,SavingMailRepository $savingMailRepository,int $user_id):Response 
     {
         //в request или json получаем referral_link - рефовода, id - пакета из таблицы обзора пакетов, id-  пользователя
         $entityManager = $doctrine->getManager(); 
@@ -44,6 +46,7 @@ class PakegeController extends AbstractController
             $new_user->setCreatedAt(new \DateTime());
             $new_user -> setUpdatedAt(new \DateTime());
             $referral_link = $data->get('referral_link');
+            $email = $data->get('email_user');
             $random_code = 'CP'.mt_rand();
             $client_code = $user_id.$random_code;
             $secret_code = mt_rand().'-'.mt_rand();
@@ -52,6 +55,7 @@ class PakegeController extends AbstractController
             $new_user->setPesonalCode($client_code);
             $new_user->setSecretCode($secret_code);
             $new_user->setReferralLink($referral_link);
+            $new_user->setEmail($email);
             $new_user->setRoles(["ROLE_USER"]);
             $new_user->setMultiPakage(0);
             $new_user->setPakageStatus(0);
@@ -68,11 +72,14 @@ class PakegeController extends AbstractController
         $unique_code = $unique_code1.$unique_code2;
         $token_table =  $entityManager->getRepository(TokenRate::class)->findOneBy(['id' => 1]) -> getExchangeRate();
         $pakage_table_id = $data->get('pakage_table_id');
+        //$email = $data->get('email_user');
         //$referral_link = $data->get('referral_link');
         $referral_link = $user->getReferralLink();
+        $email = $user->getEmail();
         //$pakage_user = $entityManager->getRepository(TablePakage::class)->findOneBy(['name' => $pakage_name]); 
         $pakage_table = $entityManager->getRepository(TablePakage::class)->findOneBy(['id' => $pakage_table_id]);
         //$pakage_table = $entityManager->getRepository(TablePakage::class)->findOneBy(['id' => 1]);
+        //dd($email);
         $pakage_name_table = $pakage_table -> getName();
         $token_rate = $entityManager->getRepository(TokenRate::class)->findOneBy(['id' => 1]) -> getExchangeRate();
         $pakage_user_price = $pakage_table -> getPricePakage();
@@ -110,8 +117,8 @@ class PakegeController extends AbstractController
         $transactionTableRepository -> add($transaction);
         $entityManager->persist($transaction);
         $entityManager->flush();
-        //==========================   
-        // $mailerController->sendEmail($mailer,$savingMailRepository);
+        //отправка электронного письма с подтверждением  
+        $mailerController->sendEmail($mailer,$savingMailRepository,$entityManager,$user_id,$email,$user);
         $this->addFlash(
             'success',
             'Congratulations! You have successfully purchased a new package.');
@@ -132,6 +139,36 @@ class PakegeController extends AbstractController
         return new jsonResponse([//'user' => $jsonUser,
                                 'data' => $jsonPakage_id,
                                 //'referral_link' => $jsonReferral_link,
+                                'controller_name' => $controller_name,
+                                'title' => $title,
+                                'notice' => $notice,                        
+        Response::HTTP_CREATED ]);
+
+    } 
+    
+    
+    #[Route('/show/{user_id}', name: 'app_pakege_show')]
+    public function showPakage(Request $request,UserRepository $userRepository,PakegeRepository $pakegeRepository,EntityManagerInterface $entityManager, TransactionTableRepository $transactionTableRepository,SerializerInterface $serializer,ManagerRegistry $doctrine, MailerInterface $mailer,  MailerController $mailerController,SavingMailRepository $savingMailRepository,int $user_id):Response 
+    {
+        $entityManager = $doctrine->getManager(); 
+        $controller_name = 'Show pakage';
+        $title = 'Show pakage';
+        $data = $request->query;
+        $pakage_user = $entityManager->getRepository(Pakege::class)->findByExampleIdField($user_id);
+        
+        $this->addFlash(
+            'success',
+            'Congratulations! You have successfully purchased a new package.');
+        $this->addFlash(
+            'info',
+            'In order for the package to start working for you, you must activate the package. Activate the package!'); 
+            
+        
+        $jsonPakage = $serializer->serialize($pakage_user, 'json');
+        
+        $notice = ['sacces' => 'succes operations'];
+        return new jsonResponse([
+                                'pakages' => $jsonPakage,
                                 'controller_name' => $controller_name,
                                 'title' => $title,
                                 'notice' => $notice,                        

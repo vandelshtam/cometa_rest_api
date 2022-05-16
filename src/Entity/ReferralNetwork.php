@@ -80,7 +80,7 @@ class ReferralNetwork
     private $withdrawal_to_wallet;
 
     #[ORM\Column(type: 'float', nullable: true)]
-    private $sysrem_revenues;
+    private $system_revenues;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     private $created_at;
@@ -357,14 +357,14 @@ class ReferralNetwork
         return $this;
     }
 
-    public function getSysremRevenues(): ?float
+    public function getSystemRevenues(): ?float
     {
-        return $this->sysrem_revenues;
+        return $this->system_revenues;
     }
 
-    public function setSysremRevenues(?float $sysrem_revenues): self
+    public function setSystemRevenues(?float $system_revenues): self
     {
-        $this->sysrem_revenues = $sysrem_revenues;
+        $this->system_revenues = $system_revenues;
 
         return $this;
     }
