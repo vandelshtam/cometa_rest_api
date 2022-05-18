@@ -2,9 +2,12 @@
 
 namespace App\Entity;
 
-use App\Repository\ListReferralNetworksRepository;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Core\Annotation\ApiResource;
+use App\Repository\ListReferralNetworksRepository;
 
+/** A pakage. */
+#[ApiResource]
 #[ORM\Entity(repositoryClass: ListReferralNetworksRepository::class)]
 class ListReferralNetworks
 {

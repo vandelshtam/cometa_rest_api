@@ -34,31 +34,54 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 #[Route('/api/referral')]
 class ListReferralNetworksController extends AbstractController
 {
-    #[Route('/list/referral/networks', name: 'app_list_referral_networks')]
-    public function index(): Response
+    #[Route('/admin', name: 'app_list_referral_networks_index', methods: ['GET'])]
+    public function index(Request $request,SerializerInterface $serializer, ListReferralNetworksRepository $listReferralNetworksRepository,EntityManagerInterface $entityManager, MailerInterface $mailer,ManagerRegistry $doctrine,  MailerController $mailerController,SavingMailRepository $savingMailRepository): Response
     {
-        return $this->render('list_referral_networks/index.html.twig', [
-            'controller_name' => 'ListReferralNetworksController',
-        ]);
+        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $entityManager = $doctrine->getManager();
+        $pakages = $entityManager->getRepository(Pakege::class)->findAll();
+        foreach($pakages as $pakage){
+            $pakage_price_all[] = $pakage -> getPrice();
+        }
+        $pakage_price_all_summ = array_sum($pakage_price_all);
+        $pakage_count = count($pakages);
+
+        $list_referral_networks = $listReferralNetworksRepository->findAll();
+
+        $networks = $entityManager->getRepository(ReferralNetwork::class)->findAll();
+        foreach($networks as $network){
+            $withdrawal_to_wallet_all[] = $network -> getWithdrawalToWallet();
+            $reward_to_wallet_all[] = $network -> getRewardWallet();
+        }
+        $withdrawal_to_wallet_all_summ = array_sum($withdrawal_to_wallet_all);
+        $reward_to_wallet_all_summ = array_sum($reward_to_wallet_all);
+
+        $controller_name = 'Show referral network';
+        $title = 'Show referral network';
+
+        $json_list_referral_networks = $serializer->serialize($list_referral_networks, 'json');
+
+        return new jsonResponse(['list referral' => [
+            'referral_networks' => $json_list_referral_networks,
+            'reward_to_wallet_all_summ' => $reward_to_wallet_all_summ,
+            'withdrawal_to_wallet_all_summ' => $withdrawal_to_wallet_all_summ,
+            'pakage_price_all_summ' => $pakage_price_all_summ,
+            '$pakage_count' => $pakage_count],
+            'controller_name' => $controller_name,
+            'title' => $title,                       
+            Response::HTTP_CREATED ]);
     }
+
 
     #[Route('/new/{pakage_id}', name: 'app_list_referral_networks_new_confirm', methods: ['GET', 'POST'])]
     public function newConfirm(Request $request, SerializerInterface $serializer, ManagerRegistry $doctrine, ListReferralNetworksRepository $listReferralNetworksRepository, ReferralNetworkRepository $referralNetworkRepository,SavingMailRepository $savingMailRepository, int $pakage_id): Response
-    {  
+    { 
+        //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY'); 
         $controller_name = 'New referral network';
         $title = 'New referral network';
         $data = $request->query;
         $user_id = $data->get('user_id');
-        //$user_id = 1;
         $owner_name = $data->get('referral_name');
-        //$owner_name = 'CoMetaClub';
-        // $jsonUser_id = $serializer->serialize($user_id, 'json');
-        // return new jsonResponse([//'user' => $jsonUser,
-        //     'user_id' => $jsonUser_id,
-        //     //'referral_link' => $jsonUser_id,
-        //     'controller_name' => $controller_name,
-        //     'title' => $title,                     
-        //     Response::HTTP_CREATED ]);
         $entityManager = $doctrine->getManager();
         $listReferralNetwork = new ListReferralNetworks();
         //$id переданный в агрументе id пакета пользователя пришедшего для записи в качестве члена сети, в данном случае совпадает с владельцем сети
@@ -126,9 +149,8 @@ class ListReferralNetworksController extends AbstractController
         $notice = ['sacces' => 'You have successfully activated the package and created a new referral network.'];
         $new_referral_network = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['pakege_id' => $pakage_id]);
         $jsonNew_referral_network = $serializer->serialize($new_referral_network, 'json');
-        return new jsonResponse([//'user' => $jsonUser,
+        return new jsonResponse([
             'new_network' => $jsonNew_referral_network,
-            //'referral_link' => $jsonReferral_link,
             'controller_name' => $controller_name,
             'title' => $title,
             'notice' => $notice,                        

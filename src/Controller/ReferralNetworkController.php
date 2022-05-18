@@ -40,26 +40,185 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 #[Route('/api/network')]
 class ReferralNetworkController extends AbstractController
 {
-    #[Route('/list', name: 'app_referral_network')]
-    public function index(): Response
+    #[Route('/admin', name: 'app_referral_network_index', methods: ['GET'])]
+    public function index(ReferralNetworkRepository $referralNetworkRepository,SerializerInterface $serializer, Request $request,  MailerInterface $mailer, MailerController $mailerController, ManagerRegistry $doctrine,SavingMailRepository $savingMailRepository): Response
     {
-        return $this->render('referral_network/index.html.twig', [
-            'controller_name' => 'ReferralNetworkController',
+        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $controller_name = 'List of all revenge in line';
+        $title = 'List of all revenge in line';
+        $entityManager = $doctrine->getManager(); 
+        $referral_networks = $referralNetworkRepository->findAll();
+        $json_referral_networks = $serializer->serialize($referral_networks, 'json');
+        return new jsonResponse(['referral_networks' => $json_referral_networks,
+            'controller_name' => $controller_name,
+            'title' => $title,                      
+            Response::HTTP_CREATED ]);
+    }
+
+
+
+    #[Route('/total/balance/{user_id}', name: 'app_referral_network_index_user', methods: ['GET', 'POST'])]
+    public function indexUser(ReferralNetworkRepository $referralNetworkRepository,SerializerInterface $serializer,Request $request,  MailerInterface $mailer, MailerController $mailerController, ManagerRegistry $doctrine,SavingMailRepository $savingMailRepository, int $user_id): Response
+    {
+        //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $entityManager = $doctrine->getManager();
+        $referral_networks = $entityManager->getRepository(ReferralNetwork::class)->findByUserIdField($user_id);
+        $token_rate = $entityManager->getRepository(TokenRate::class)->findOneBy(['id' => 1]) -> getExchangeRate();//курс токена
+        
+        $array_summ_cash = [];
+        foreach($referral_networks as $network){
+            $array_summ_cash[] = $network -> getCash();
+        }
+        $summ_cash = array_sum($array_summ_cash);
+
+        $array_summ_direct = [];
+        foreach($referral_networks as $network){
+            $array_summ_direct[] = $network -> getDirect();
+        }
+        $summ_direct = array_sum($array_summ_direct);
+
+        $reward_all = $summ_direct + $summ_cash;
+
+
+        $controller_name = 'The total balance of all my places';
+        $title = 'The total balance of all my places';
+
+        $json_referral_networks = $serializer->serialize($referral_networks, 'json');
+        return new jsonResponse([
+            'referral_networks' => $json_referral_networks,
+            'controller_name' => $controller_name,
+            'title' => $title,
+            'token_rate' => $token_rate,
+            'summ_direct' => $summ_direct,
+            'summ_cash' => $summ_cash,
+            'reward_all' => $reward_all,
         ]);
     }
 
+
+
+    #[Route('/myteam/{pakage_id}', name: 'app_referral_network_myteam', methods: ['GET'])]
+    public function myTeam(Request $request,SerializerInterface $serializer, ReferralNetworkRepository $referralNetworkRepository,MailerInterface $mailer,ManagerRegistry $doctrine,  MailerController $mailerController, SavingMailRepository $savingMailRepository, string $pakage_id): Response
+    { 
+        //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $entityManager = $doctrine->getManager();
+        $referral_network = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['pakege_id' => $pakage_id]);
+        $my_team = $referral_network -> getMemberCode();
+        if($entityManager->getRepository(ReferralNetwork::class)->findByMyTeamField([$my_team]) == false){
+            $this->addFlash(
+                'warning',
+                'You do not have a team, you have not invited anyone, or access rights');
+                return new jsonResponse([
+                    'notice' => 'You do not have a team, you have not invited anyone, or access rights',
+                ]);
+        }
+        $token_rate = $entityManager->getRepository(TokenRate::class)->findOneBy(['id' => 1]) -> getExchangeRate();//курс токена
+        $array_my_team = $entityManager->getRepository(ReferralNetwork::class)->findByMyTeamField([$my_team]);//получаем объект  участников моей команды (которых пригласил пользователь) 
+        $my_team_count = count($array_my_team);
+        foreach($array_my_team as $array){
+            $array_my_team_summ_pakege[] = $array -> getPakage();
+        }
+        $my_team_summ = array_sum($array_my_team_summ_pakege) *  $token_rate;
+
+        //получим всех участников моей команды - участников которых пригласили члены команды и их члены команды
+        //получим реферальные ссылки членов команды
+        $array_my_team_link = []; //массив для реферальных ссылок членов команды
+        foreach($array_my_team as $array){
+           $array_my_team_link[] = $array -> getMemberCode();//получаем реферальную ссылку членов команды
+        }
+        $array_my_team_my_team = [];//массив для команды "моей команды" (тех кого пригласили мои участники моей команды)
+        $array_link_my_team_my_team = [];//массив реферальных ссылок моей команды
+        $array_link = [];
+        $array_link = $array_my_team_link ;
+            $i = 1;
+            $array_control = [];
+            $new_array_link = [];
+            while($i <= count($referralNetworkRepository->findAll())){
+                foreach($array_link as $array){
+                    $array_control[] = $entityManager->getRepository(ReferralNetwork::class)->findByMyTeamField([$array]);
+                }
+                $result_array = [];
+                for($i=0; $i<count($array_control); $i++){
+                    foreach($array_control[$i] as $array){
+                        $result_array[] = $array;
+                    }
+                }
+                if(count($result_array) == 0){
+                    $i = 0;
+                    break;
+                }
+                else{
+                    $new_array_link = [];
+                    foreach($result_array as $array){
+                    $new_array_link[] = $array -> getMemberCode();//получаем реферальную ссылку членов команды их команды и добавляем в массив ссылок членов команды если они есть
+                    }
+                    $array_link = $new_array_link;
+                    $relult_array_link = array_merge_recursive($array_my_team_link, $new_array_link);
+                    $array_my_team_link = $relult_array_link;
+                $i += 1;
+                }
+                    
+            }
+            $array_my_team_link =  array_unique($array_my_team_link);            
+            $array_all_my_team = [];
+            $array_my_team_left = [];
+            $array_my_team_right = [];
+            foreach($array_my_team_link as $link){
+                $array_all_my_team[] = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['member_code' => $link]);
+            }
+            foreach($array_all_my_team as $network){
+                if($network->getuserStatus() == 'left'){
+                    $array_my_team_left[] = $network;
+                }
+                else{
+                    $array_my_team_right[] = $network;
+                }
+                
+            }
+            $array_my_team_left = array_reverse($array_my_team_left);
+            $array_referral_network_user = [];
+            $array_referral_network_user[] = $referral_network;
+            $array_my_team_count_all = [];
+            $array_my_team_balance_all = [];
+            $array_all_my_team_comand_no_refovod = array_merge_recursive($array_my_team_left,$array_my_team_right);//вся моя команда в том числе партнеры приглашенный моими партнерами
+            $array_all_my_team_comand = array_merge_recursive($array_my_team_left, $array_referral_network_user,$array_my_team_right);
+            foreach($array_all_my_team_comand_no_refovod as $network){
+                $array_my_team_balance_all[] = $network->getPakage();
+            }
+            $my_team_count_all = count($array_all_my_team_comand_no_refovod);
+            $my_team_balance_all = array_sum($array_my_team_balance_all) * $token_rate;
+            
+            $controller_name = 'My team';
+            $title = 'My team';
+
+            $json_array_my_team = $serializer->serialize($array_my_team, 'json');//json моя  команда - партнеры приглашенные лично мной
+            $json_array_all_my_team_comand_no_refovod = $serializer->serialize($array_all_my_team_comand_no_refovod, 'json');//json вся моя команда 
+            
+            return new jsonResponse([
+                    'controller_name' => $controller_name,
+                    'title' => $title ,
+                    'referral_networks' => $json_array_my_team,
+                    'my_team_summ' => $my_team_summ,
+                    'my_team_count' => $my_team_count,
+                    'referral_networks_my_team' => $json_array_all_my_team_comand_no_refovod,
+                    'my_team_balance_all' => $my_team_balance_all,
+                    'my_team_count_all' => $my_team_count_all,
+                ]);
+    }
+
+
+
     #[Route('/new/{pakage_id}', name: 'app_referral_network_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, ReferralNetworkRepository $referralNetworkRepository, TransactionTableRepository $transactionTableRepository, MailerInterface $mailer,ManagerRegistry $doctrine,  MailerController $mailerController,SavingMailRepository $savingMailRepository,int $pakage_id): Response
+    public function new(Request $request,SerializerInterface $serializer, ReferralNetworkRepository $referralNetworkRepository, TransactionTableRepository $transactionTableRepository, MailerInterface $mailer,ManagerRegistry $doctrine,  MailerController $mailerController,SavingMailRepository $savingMailRepository,int $pakage_id): Response
     {
-        $controller_name = 'New pakage';
-        $title = 'New pakage';
+        //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $controller_name = 'New place in the line';
+        $title = 'New place in the line';
         $data = $request->query;
-        //dd($pakage_id);
         //данные нового участника сети при активации пакета
         $entityManager = $doctrine->getManager();
         
         $pakege_user = $entityManager->getRepository(Pakege::class)->findOneBy(['id' => $pakage_id]);
-        //dd($pakege_user);
         $user_id = $pakege_user -> getUserId();
         $referral_link = $pakege_user -> getReferralLink();
         $user = $entityManager->getRepository(User::class)->findOneBy(['user_id' => $user_id]);
@@ -68,7 +227,6 @@ class ReferralNetworkController extends AbstractController
 
         //создание уникального персонального кода  нового участника сети пришедшего по реферальной ссылке (рефовода)
         $arr1 = $arr[0]; $arr2 = $arr[2]; $arr3 = $arr[3];
-        //dd($pakage_id);
         $member_code = $this -> makeMemberCode($arr1,$pakage_id,$arr2,$arr3);
 
         $referralNetwork = new ReferralNetwork();
@@ -89,19 +247,272 @@ class ReferralNetworkController extends AbstractController
         $this->addFlash(
                      'success',
                      'Congratulations! You have successfully activated the package and become a member of the Single Line.');         
-        //$jsonPakage_id = $serializer->serialize($pakage_table_id, 'json');
-        //$jsonReferral_link = $serializer->serialize($referral_link, 'json');
-        //$jsonUser = $serializer->serialize($user, 'json');
         $notice = ['sacces' => 'Congratulations! You have successfully activated the package and become a member of the Single Line.'];
-        return new jsonResponse([//'user' => $jsonUser,
-                             //'data' => $jsonPakage_id,
-                             //'referral_link' => $jsonReferral_link,
+
+        $my_place = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['id' => $referral_network_id]); 
+
+        $jsonMy_place = $serializer->serialize($my_place, 'json');
+        return new jsonResponse([
+                             'My place' => $jsonMy_place,
                              'controller_name' => $controller_name,
                              'title' => $title,
                              'notice' => $notice,                        
-        Response::HTTP_CREATED ]);
-        
+                            Response::HTTP_CREATED ]);
+    }
 
+
+    #[Route('/show/{pakage_id}', name: 'app_referral_network_show', methods: ['GET', 'POST'])]
+    public function show(Request $request,SerializerInterface $serializer, ReferralNetworkRepository $referralNetworkRepository, MailerInterface $mailer,  MailerController $mailerController, ManagerRegistry $doctrine, SavingMailRepository $savingMailRepository, int $pakage_id): Response
+    {
+        //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
+        $entityManager = $doctrine->getManager();
+        if($entityManager->getRepository(ReferralNetwork::class)->findOneBy(['pakege_id' => $pakage_id]) == false){
+            $this->addFlash(
+                'danger',
+                'You have not yet purchased or activated any packages, or you do not have access rights');
+            return new jsonResponse([
+                    'notice' => 'You have not yet purchased or activated any packages, or you do not have access rights',
+            ]);    
+        }
+        $token_rate = $entityManager->getRepository(TokenRate::class)->findOneBy(['id' => 1]) -> getExchangeRate();//курс токена
+        $referral_network = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['pakege_id' => $pakage_id]);
+        $my_team = $referral_network -> getMyTeam();
+        if($this -> myTeamInform($request, $referralNetworkRepository,$doctrine,$pakage_id) == false){
+            $my_team ([
+                'my_team_balance_all' => 0,
+                'my_team_count_all' => 0,
+                ]);
+        }
+        else{
+            $my_team_all = $this -> myTeamInform($request, $referralNetworkRepository,$doctrine,$pakage_id);
+        }
+        
+        $referral_link = $referral_network -> getMemberCode();
+        $user_id = $referral_network -> getUserId();
+        $email_user = $entityManager->getRepository(User::class)->findOneBy(['user_id' => $user_id]) -> getEmail();
+        
+        $referral_network_left = $entityManager->getRepository(ReferralNetwork::class)->findByLeftField(['left']);//получаем объект всех участников с левой стороны линии
+        $referral_network_right = $entityManager->getRepository(ReferralNetwork::class)->findByRightField(['right']);//получаем объект участников участников с правой стороны 
+        $array_my_team = $entityManager->getRepository(ReferralNetwork::class)->findByMyTeamField($referral_link);//получаем объект  участников моей команды (которых пригласил пользователь)
+        $user_status = $referral_network -> getUserStatus();
+        if($array_my_team != NULL){
+            $my_team_count = count($array_my_team);
+            foreach($array_my_team as $array){
+                $array_my_team_summ_pakege[] = $array -> getPakage();
+            }
+            $my_team_summ = array_sum($array_my_team_summ_pakege) * $token_rate;
+        }
+        else{
+            $my_team_summ = 0;
+            $my_team_count = 0;
+        }
+        
+        $user_owner = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['user_status' => 'owner']);//объект владельца сети
+        $pakege_user = $entityManager->getRepository(Pakege::class)->findOneBy(['id' => $pakage_id]);// получаем оъект пакета  участника реферальной сети
+        $owner_array[] = $user_owner;//основатель сети (Владелец)
+        $reward = $referral_network -> getReward() * $token_rate;
+        $pakage_price = $referral_network -> getPakage();
+        $k_cash_back = $entityManager->getRepository(SettingOptions::class)->findOneBy(['id' => 1]) -> getCashBack()/100;//получаем коэффициент начисления cash_back
+        $limit_cash_back = $k_cash_back * $pakage_price;
+        //построение линии сингл-лайн в виде массива
+        $single_line = array_merge($referral_network_left, $owner_array, $referral_network_right);//объеденяем в один массив в  соотвтетсвии с правилом построения линии сингл-лайн
+        
+        //получаем ключ положения пользователя в массиве объектов участников реферальной сети
+        $j = 0;
+        for($i = 0; $i < count($single_line); $i++){
+            if($single_line[$i] -> getPakegeId() == $pakage_id){
+                $j += 1;
+                $key_user[] = $i;
+                break;
+            }
+        }
+        $single_line_left = [];
+        for($i = 0; $i < $key_user[0]; $i++){
+            $single_line_left[] = $single_line[$i];
+        }
+        $single_line_right = [];
+        for($i = $key_user[0] + 1; $i < count($single_line); $i++){
+            $single_line_right[] = $single_line[$i];
+        }
+        
+        //получаем баланс левой и правой части линии
+        $single_line_left_balance = [];
+        for($i = 0; $i < count($single_line_left); $i++){
+            $single_line_left_balance[] = $single_line_left[$i] -> getBalance();
+        }
+        $summ_single_line_left_balance = array_sum($single_line_left_balance);
+        $count_single_line_left = count($single_line_left_balance) * $token_rate;
+        
+        $single_line_right_balance = [];
+        for($i = 0; $i < count($single_line_right); $i++){
+            $single_line_right_balance[] = $single_line_right[$i] -> getBalance();
+        }
+        $summ_single_line_right_balance = array_sum($single_line_right_balance) * $token_rate;
+        $count_single_line_right = count($single_line_right_balance);
+
+        $array_data = ['summ_left' => $summ_single_line_left_balance, 'summ_right' => $summ_single_line_right_balance,
+                       'count_left' => $count_single_line_left, 'count_right' => $count_single_line_right,
+                       'my_summ' => $reward];
+
+        //рачет - лимит вывода из линии (линии) на кошелек
+        $setting_opyions = $entityManager->getRepository(SettingOptions::class)->findOneBy(['id' => 1]);
+        $withdrawal_wallet = $referral_network -> getWithdrawalToWallet();//учет ввсех сумм с накоплением выведенных из  сингллайн на кошелек
+        $limit_wallet_from_line = $setting_opyions -> getLimitWalletFromLine();//коеф лимита для  вывода из сети на кошелек
+        $reward_all = $referral_network -> getRewardWallet();//все начисления в сети сингллайн за все время предназначенные для вывода на кошелек
+        $available_amount = ($reward_all * $limit_wallet_from_line) / 100; //общая сумма доступная для вывода - контрольная с которой сравниваем выводимые средства
+        $available_balance = ($available_amount - $withdrawal_wallet) * $token_rate;//доступный остаток для вывода в момент запроса
+
+        $token_rate = $entityManager->getRepository(TokenRate::class)->findOneBy(['id' => 1]) -> getExchangeRate();//курс токена
+        $json_referral_network = $serializer->serialize($referral_network, 'json');
+        $json_array_data = $serializer->serialize($array_data, 'json');
+        $json_my_team_all = $serializer->serialize($my_team_all, 'json');
+        $controller_name = 'Show my place';
+        $title = 'Show my place'; 
+
+        return new jsonResponse([
+            'referral_network' => $json_referral_network,
+            'data' => $json_array_data,
+            'pakege_user' => $pakege_user,
+            'k_cash_back' => $k_cash_back,
+            'my_team_count' => $my_team_count,
+            'my_team_summ' => $my_team_summ,
+            'my_team_all' => $json_my_team_all,
+            'limit_cashback' => $limit_cash_back,
+            'available_balance' => $available_balance,
+            'token_rate' => $token_rate,
+            'title' => $title,
+            'controller_name' => $controller_name,
+        ]);
+    }
+
+
+    #[Route('/mail_referral/{pakage_id}', name: 'app_referral_network_mail', methods: ['GET', 'POST'])]
+    public function mailReferral(Request $request, ReferralNetworkRepository $referralNetworkRepository, MailerInterface $mailer, MailerController $mailerController, ManagerRegistry $doctrine, SavingMailRepository $savingMailRepository, int $pakage_id,): Response
+    {
+        //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
+        $entityManager = $doctrine->getManager();
+        $data = $request->query;
+        $email_to_client = $data->get('email_to_client');
+        //$email_to_client = 'email@client';
+        $referral_network = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['pakege_id' => $pakage_id]);
+        $referral_link = $referral_network -> getMemberCode();
+        $user_id = $referral_network -> getUserId();
+        $username = 'My name';//ИЗМЕНИТЬ на ФАКТИЧЕСКИЙ ДОБАВИТЬ в таблицу!!!!!!!!!
+        $personal_code = $entityManager->getRepository(User::class)->findOneBy(['id' => $user_id]) -> getPesonalCode();
+        $email_user = $entityManager->getRepository(User::class)->findOneBy(['id' => $user_id]) -> getEmail();
+        
+ 
+        $mailerController -> sendReferralToEmail($entityManager,$mailer,$email_to_client,$email_user,$referral_link,$personal_code,$savingMailRepository,$user_id,$username); 
+        $controller_name = 'Referral_link to mail';
+        $title = 'Referral_link to mail'; 
+
+        $this->addFlash(
+            'success',
+            'You have successfully sent a referral link to invite a new member to the line.');
+        
+            $notice = 'You have not yet purchased or activated any packages, or you do not have access rights';
+            
+        return new jsonResponse([
+            'notis' => $notice,
+            'title' => $title,
+            'controller_name' => $controller_name,
+        ]);
+    }
+
+
+   
+    private function myTeamInform($request, $referralNetworkRepository,$doctrine,$pakage_id)
+    { 
+        //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $entityManager = $doctrine->getManager();
+        $referral_network = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['pakege_id' => $pakage_id]);
+        $my_team = $referral_network -> getMemberCode();
+        if($entityManager->getRepository(ReferralNetwork::class)->findByMyTeamField([$my_team]) == false){
+            return false;
+        }
+        $token_rate = $entityManager->getRepository(TokenRate::class)->findOneBy(['id' => 1]) -> getExchangeRate();//курс токена
+        $array_my_team = $entityManager->getRepository(ReferralNetwork::class)->findByMyTeamField([$my_team]);//получаем объект  участников моей команды (которых пригласил пользователь) 
+        $my_team_count = count($array_my_team);
+        foreach($array_my_team as $array){
+            $array_my_team_summ_pakege[] = $array -> getPakage();
+        }
+        $my_team_summ = array_sum($array_my_team_summ_pakege) *  $token_rate;
+
+        //получим всех участников моей команды - участников которых пригласили члены команды и их члены команды
+        //получим реферальные ссылки членов команды
+        $array_my_team_link = []; //массив для реферальных ссылок членов команды
+        foreach($array_my_team as $array){
+           $array_my_team_link[] = $array -> getMemberCode();//получаем реферальную ссылку членов команды
+        }
+        $array_my_team_my_team = [];//массив для команды "моей команды" (тех кого пригласили мои участники моей команды)
+        $array_link_my_team_my_team = [];//массив реферальных ссылок моей команды
+        $array_link = [];
+        $array_link = $array_my_team_link ;
+            $i = 1;
+            $array_control = [];
+            $new_array_link = [];
+            while($i <= count($referralNetworkRepository->findAll())){
+                foreach($array_link as $array){
+                    $array_control[] = $entityManager->getRepository(ReferralNetwork::class)->findByMyTeamField([$array]);
+                }
+                $result_array = [];
+                for($i=0; $i<count($array_control); $i++){
+                    foreach($array_control[$i] as $array){
+                        $result_array[] = $array;
+                    }
+                }
+                if(count($result_array) == 0){
+                    $i = 0;
+                    break;
+                }
+                else{
+                    $new_array_link = [];
+                    foreach($result_array as $array){
+                    $new_array_link[] = $array -> getMemberCode();//получаем реферальную ссылку членов команды их команды и добавляем в массив ссылок членов команды если они есть
+                    }
+                    $array_link = $new_array_link;
+                    $relult_array_link = array_merge_recursive($array_my_team_link, $new_array_link);
+                    $array_my_team_link = $relult_array_link;
+                $i += 1;
+                }
+                    
+            }
+            $array_my_team_link =  array_unique($array_my_team_link);            
+            $array_all_my_team = [];
+            $array_my_team_left = [];
+            $array_my_team_right = [];
+            foreach($array_my_team_link as $link){
+                $array_all_my_team[] = $entityManager->getRepository(ReferralNetwork::class)->findOneBy(['member_code' => $link]);
+            }
+            foreach($array_all_my_team as $network){
+                if($network->getuserStatus() == 'left'){
+                    $array_my_team_left[] = $network;
+                }
+                else{
+                    $array_my_team_right[] = $network;
+                }
+                
+            }
+            $array_my_team_left = array_reverse($array_my_team_left);
+            $array_referral_network_user = [];
+            $array_referral_network_user[] = $referral_network;
+            $array_my_team_count_all = [];
+            $array_my_team_balance_all = [];
+            $array_all_my_team_comand_no_refovod = array_merge_recursive($array_my_team_left,$array_my_team_right);//вся моя команда в том числе партнеры приглашенный моими партнерами
+            $array_all_my_team_comand = array_merge_recursive($array_my_team_left, $array_referral_network_user,$array_my_team_right);
+            foreach($array_all_my_team_comand_no_refovod as $network){
+                $array_my_team_balance_all[] = $network->getPakage();
+            }
+            $my_team_count_all = count($array_all_my_team_comand_no_refovod);
+            $my_team_balance_all = array_sum($array_my_team_balance_all) * $token_rate;
+
+            $my_team = ([
+                    'my_team_balance_all' => $my_team_balance_all,
+                    'my_team_count_all' => $my_team_count_all,
+                    ]);
+            return $my_team;
     }
 
 

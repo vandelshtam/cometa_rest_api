@@ -22,21 +22,24 @@ nelmio_api_doc:
                 get:
                     description: Get all users
                     tags:
-                        - users
+                        - User management
                     responses:
                         200:
                             description: ok
                             content: 
                                 application/json: 
-                                    schema:
+                                    schema: 
                                         type: object
                                         properties:
-                                            status: { type: string, example: 'ok'}
-            /api/user/{userId}:
+                                            status: { type: string, example: '0'}
+                                            name: { type: string, example: 'string'}
+                                            email: { type: string, example: 'ok'}
+                                        
+            /api/user/admin/{userId}:
                 post:
                     description: Show user
                     tags:
-                        - users
+                        - User management
                     parameters:
                         - in: query
                           name: user
@@ -50,8 +53,8 @@ nelmio_api_doc:
                             content: 
                                 application/json: 
                                     schema: 
-                                        $ref: #/components/schemas/UserResponse
-            /api/user/{id}:
+                                        $ref: '#/components/schemas/User'
+            /api/user/admin/{id}:
                 get:
                     description: Show user Id
                     tags:
@@ -59,13 +62,13 @@ nelmio_api_doc:
                     parameters:
                         - in: path
                           name: userId
-                          required: true
+                          required: false
                           schema:
                             type: string
                     # parameters:
                         - in: path
                           name: email
-                          required: true
+                          required: false
                           schema:
                             type: string
                             
@@ -75,7 +78,7 @@ nelmio_api_doc:
                             content: 
                                 application/json: 
                                     schema: 
-                                        $ref: #/components/schemas/UserResponse
+                                        $ref: '#/components/schemas/UserDTO'
                     # parameters:
                     #     - in: query
                     #       name: name
@@ -182,6 +185,18 @@ nelmio_api_doc:
                                 application/json: 
                                     schema: 
                                         $ref: #/components/schemas/UserResponse 
+            /api/referral/admin:
+                get:
+                    description: Show all referral 
+                    tags:
+                        - Referral management 
+                    responses:
+                        200:
+                            description: Show all referral network
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: '#/components/schemas/ListReferralNetworks' 
             /api/network/new/{pakage_id}:
                 post:
                     description: Create New network user 
@@ -210,6 +225,95 @@ nelmio_api_doc:
                                 application/json: 
                                     schema: 
                                         $ref: #/components/schemas/UserResponse 
+            /api/network/total/balance/{user_id}:
+                get:
+                    description: The total balance of all my places 
+                    tags:
+                        - Network management 
+                    parameters:
+                        - in: path
+                          name: user_id
+                          required: true
+                          schema:
+                            type: integer
+                    responses:
+                        200:
+                            description: The total balance of all my places
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: #/components/schemas/UserResponse 
+            /api/network/myteam/{pakage_id}:
+                get:
+                    description: My Team
+                    tags:
+                        - Network management 
+                    parameters:
+                        - in: path
+                          name: pakage_id
+                          required: true
+                          schema:
+                            type: integer
+                    responses:
+                        200:
+                            description: My Team
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: '#/components/schemas/ReferralNetwork' 
+            /api/network/show/{pakage_id}:
+                get:
+                    description: Show my place
+                    tags:
+                        - Network management 
+                    parameters:
+                        - in: path
+                          name: pakage_id
+                          required: true
+                          schema:
+                            type: integer
+                    responses:
+                        200:
+                            description: Show my place
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: '#/components/schemas/ReferralNetwork' 
+            /api/network/mail_referral/{pakage_id}:
+                post:
+                    description: Show my place
+                    tags:
+                        - Network management 
+                    parameters:
+                        - in: path
+                          name: pakage_id
+                          required: true
+                          schema:
+                            type: integer
+                        - in: query
+                          name: email_to_client
+                          required: true
+                          schema:
+                            type: string
+                    responses:
+                        200:
+                            description: Show my place
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: '#/components/schemas/ReferralNetwork' 
+            /api/network/admin:
+                get:
+                    description: List of all revenge in line 
+                    tags:
+                        - Network management 
+                    responses:
+                        200:
+                            description: List of all revenge in line
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: '#/components/schemas/ReferralNetwork' 
                     # requestBody:
                     #     description: A JSON object containing pet information
                     #     content:
@@ -217,14 +321,25 @@ nelmio_api_doc:
                     #         schema:
                     #         oneOf:
                     #             - $ref: #/components/schemas/UserResponse                                                      
-        # tags: 
-        #    - name: User_user
-        #      description: uuuuu_nnnnn
-        #    - name: pakage_pakage
-
-            
-            
-
+        tags: 
+           - name: User management
+           - name: Package management
+           - name: Network management 
+           - name: Referral management    
+        components:   
+            schemas:
+                NetworkDTO:
+                    description: Network table      
+                    type: object
+                    properties:
+                        User Id: { type: integer, example: 'integer'}   
+                UserDTO:
+                    description: User table      
+                    type: object
+                    properties:
+                        referral link: { type: string, example: 'string'}
+                        name: { type: string, example: 'string'}
+                        email: { type: string, example: 'string'}
     areas: # to filter documented areas
          
         path_patterns:

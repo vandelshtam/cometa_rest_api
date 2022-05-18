@@ -96,10 +96,10 @@
                         <a class="nav-link text-light" href="{{ path('app_user') }}">Правила и акции</a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-light" href="{{ path('app_user') }}">Обзор пакетов</a>
+                        <a class="nav-link text-light" href="{{ path('app_list_referral_networks_index') }}">Посмотретьинформацию о сети</a>
                         </li>
                         <li>
-                        <a class="nav-link text-light" href="{{ path('app_user_show',{'id': 3}) }}" style="color: rgb(72, 109, 169);">Мой баланс</a>
+                        <a class="nav-link text-light" href="{{ path('app_user_show',{'id': 3}) }}" style="color: rgb(72, 109, 169);">Показать юзера</a>
                         </li>
                         <li>
                         <a class="nav-link text-light" href="{{ path('app_pakege_new',{'user_id': 3}) }}" style="color: rgb(72, 109, 169);">новый пакет</a>
@@ -115,7 +115,16 @@
                         </li>      
                         <li>
                         <a class="nav-link text-light" href="{{ path('app_user',{'unique_code_get' : 'not' }) }}" style="color: rgb(72, 109, 169);">Купить пакет</a>
-                        </li>  
+                        </li> 
+                        <li>
+                        <a  class="btn btn-secondary mb-1" href="{{ path('app_referral_network_myteam',{'pakage_id': 3}) }}">Посмотреть команду</a>
+                        </li> 
+                        <li>
+                        <a  class="btn btn-secondary mb-1" href="{{ path('app_referral_network_show',{'pakage_id': 3}) }}">баланс</a>
+                        </li> 
+                        <li>
+                        <a  class="btn btn-secondary mb-1" href="{{ path('app_referral_network_mail',{'pakage_id': 3}) }}">Отправить ссылку по почте</a>
+                        </li> 
                     </ul>
                     </div>
                 </div>

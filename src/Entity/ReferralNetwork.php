@@ -2,9 +2,13 @@
 
 namespace App\Entity;
 
-use App\Repository\ReferralNetworkRepository;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Core\Annotation\ApiResource;
+use App\Repository\ReferralNetworkRepository;
 
+
+/** A ReferralNetwork. */
+#[ApiResource]
 #[ORM\Entity(repositoryClass: ReferralNetworkRepository::class)]
 class ReferralNetwork
 {

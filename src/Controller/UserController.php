@@ -51,9 +51,14 @@ class UserController extends AbstractController
                                  ]);
     }
 
-    #[Route('/{id}', name: 'app_user_show')]
+    #[Route('/admin/{id}', name: 'app_user_show')]
     public function show(Request $request,SerializerInterface $serializer,ManagerRegistry $doctrine,int $id):Response 
     {
+      //$this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY'); 
+      
+      // if($request){
+      // $this->denyAccessUnlessGranted('ROLE_ADMIN');    
+      //$this->denyAccessUnlessGranted('ROLE_ADMIN'); 
       $entityManager = $doctrine->getManager(); 
       $user =  $entityManager->getRepository(User::class)->findOneBy(['id' => $id]);
       $name = 'hhh';
@@ -71,8 +76,8 @@ class UserController extends AbstractController
       //dd($data);
       if($request){
          return new jsonResponse(['user' => [
-                                    'name' => $name,
-                                    'email' => $email,
+                                 'name' => $name,
+                                 'email' => $email,
                                  'controller_name' => $controller_name,
                                  'title' => $title,
                                  'createdData'=> ('fgfgf'),
@@ -85,6 +90,10 @@ class UserController extends AbstractController
                                  'title' => $title,
                                  'data' => $jsonData,
                                  ]);
+      // }
+      // else{
+      //    return new jsonResponse(['info' => 'Closed', Response::HTTP_CREATED ]);
+      // }
     }
 
    //  #[Route('/{id}', name: 'app_user_show')]
