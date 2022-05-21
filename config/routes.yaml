@@ -8,9 +8,34 @@ kernel:
 
 # defaults: { _controller: nelmio_api_doc.controller.swagger_ui }
 
+api_refresh_token:
+    path: /api/token/refresh
+# gesdinet_jwt_refresh_token:
+#     path: /api/token/refresh
+
+api_login_check:
+    path: api/login
+
+# api_login:
+#     path: /api/login
+
+users:
+    resource: ../src/Controller/
+    type: annotation
+
 user_controller:
    path: /api/user
    controller: App\src\Controller\UserController
+   methods: [ GET ]
+
+api_login_controller:
+   path: /api/login/me
+   controller: App\src\Controller\ApiLoginController
+   methods: [ POST ]
+
+get_me_action_controller:
+   path: /api/users/me
+   controller: App\src\Controller\GetMeActionController
    methods: [ GET ]
 
 pakege_controller:

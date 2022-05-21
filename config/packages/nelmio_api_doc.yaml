@@ -9,14 +9,8 @@ nelmio_api_doc:
             title: Cometa_rest_api
             description: Affiliate programm 
             version: 1.0.0
-        # components:
-        #     securitySchemes:
-        #         Bearer:
-        #             type: http
-        #             scheme: bearer
-        #             bearerFormat: JWT
-        # security:
-        #     - Bearer: []
+        security:
+            - Bearer: []
         paths:
             /api/user:
                 get:
@@ -75,6 +69,66 @@ nelmio_api_doc:
                     responses:
                         200:
                             description: user data Id
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: '#/components/schemas/UserDTO'
+            /api/users/me:
+                get:
+                    description: Get Me Action
+                    tags:
+                        - User management
+                    parameters:
+                        - in: path
+                          name: token_validate
+                          required: false
+                          schema:
+                            type: string
+                    responses:
+                        200:
+                            description: Get Me Action
+                            content: 
+                                application/json: 
+                                    schema: 
+                                        $ref: '#/components/schemas/UserDTO'
+            # /api/users/fetcher:
+            #     get:
+            #         description: Get Me 
+            #         tags:
+            #             - User management
+            #         parameters:
+            #             - in: path
+            #               name: token_validate
+            #               required: false
+            #               schema:
+            #                 type: string
+            #         responses:
+            #             200:
+            #                 description: Get Me 
+            #                 content: 
+            #                     application/json: 
+            #                         schema: 
+            #                             $ref: '#/components/schemas/UserDTO'
+            
+            /api/login:
+                post:
+                    description: Login
+                    tags:
+                        - User management
+                    parameters:
+                        - in: query
+                          name: email
+                          required: true
+                          schema:
+                            type: string
+                        - in: query
+                          name: password
+                          required: true
+                          schema:
+                            type: string
+                    responses:
+                        200:
+                            description: Login
                             content: 
                                 application/json: 
                                     schema: 
@@ -326,7 +380,12 @@ nelmio_api_doc:
            - name: Package management
            - name: Network management 
            - name: Referral management    
-        components:   
+        components:
+            securitySchemes:
+                    Bearer:
+                        type: http
+                        scheme: bearer
+                        bearerFormat: JWT   
             schemas:
                 NetworkDTO:
                     description: Network table      

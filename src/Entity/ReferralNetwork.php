@@ -92,6 +92,12 @@ class ReferralNetwork
     #[ORM\Column(type: 'datetime', nullable: true)]
     private $updated_at;
 
+    #[ORM\Column(type: 'float', nullable: true)]
+    private $my_team_summ;
+
+    #[ORM\Column(type: 'float', nullable: true)]
+    private $my_team_balance;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -393,6 +399,30 @@ class ReferralNetwork
     public function setUpdatedAt(?\DateTimeInterface $updated_at): self
     {
         $this->updated_at = $updated_at;
+
+        return $this;
+    }
+
+    public function getMyTeamSumm(): ?float
+    {
+        return $this->my_team_summ;
+    }
+
+    public function setMyTeamSumm(?float $my_team_summ): self
+    {
+        $this->my_team_summ = $my_team_summ;
+
+        return $this;
+    }
+
+    public function getMyTeamBalance(): ?float
+    {
+        return $this->my_team_balance;
+    }
+
+    public function setMyTeamBalance(?float $my_team_balance): self
+    {
+        $this->my_team_balance = $my_team_balance;
 
         return $this;
     }

@@ -3,16 +3,22 @@
 namespace App\Entity;
 
 //use Webmozart\Assert\Assert;
+use App\Security\UlidService;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
+use App\Security\AuthUserInterface;
+use App\Security\UserPasswordHasherInterface;
 use ApiPlatform\Core\Annotation\ApiResource;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
+
+
+
 /** A user. */
 #[ApiResource]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+class User implements AuthUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -20,7 +26,7 @@ class User
      /** The id of this user. */
     private $id;
 
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[ORM\Column(type: 'string', length: 255)]
     //#[UniqueEntity(fields: ['email'], message: 'Nest message')]
     #[Assert\NotBlank]
      /** The id of this email. */
@@ -30,11 +36,14 @@ class User
      /** The id of this referal_link. */
     private $referral_link;
 
-    #[ORM\Column(type: 'json', nullable: true)]
-    private $roles = [];
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private $ulid;
+
+    #[ORM\Column(type: 'simple_array',nullable: true)]
+    private array $roles;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private $password;
+    private ?string $password = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private $personal_data_id;
@@ -71,6 +80,17 @@ class User
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private $user_id;
+
+    public function __construct(string $email)
+    {
+        $this->ulid = UlidService::generate();
+        $this->email = $email;
+    }
+
+    public function getUlid(): string
+    {
+        return $this->ulid;
+    }
     
 
     public function getId(): ?int
@@ -78,7 +98,7 @@ class User
         return $this->id;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -102,7 +122,7 @@ class User
         return $this;
     }
 
-    public function getRoles(): ?array
+    public function getRoles(): array
     {
         return $this->roles;
     }
@@ -119,12 +139,12 @@ class User
         return $this->password;
     }
 
-    public function setPassword(?string $password): self
-    {
-        $this->password = $password;
+    // public function setPassword(?string $password): self
+    // {
+    //     $this->password = $password;
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     public function getPersonalDataId(): ?int
     {
@@ -216,27 +236,27 @@ class User
         return $this;
     }
 
-    // public function addPakege(Pakege $pakege): self
-    // {
-    //     if (!$this->pakeges->contains($pakege)) {
-    //         $this->pakeges[] = $pakege;
-    //         $pakege->setUser($this);
-    //     }
+    public function addPakege(Pakege $pakege): self
+    {
+        if (!$this->pakeges->contains($pakege)) {
+            $this->pakeges[] = $pakege;
+            $pakege->setUser($this);
+        }
 
-    //     return $this;
-    // }
+        return $this;
+    }
 
-    // public function removePakege(Pakege $pakege): self
-    // {
-    //     if ($this->pakeges->removeElement($pakege)) {
-    //         // set the owning side to null (unless already changed)
-    //         if ($pakege->getUser() === $this) {
-    //             $pakege->setUser(null);
-    //         }
-    //     }
+    public function removePakege(Pakege $pakege): self
+    {
+        if ($this->pakeges->removeElement($pakege)) {
+            // set the owning side to null (unless already changed)
+            if ($pakege->getUser() === $this) {
+                $pakege->setUser(null);
+            }
+        }
 
-    //     return $this;
-    // }
+        return $this;
+    }
 
     public function getCreatedAt(): ?\DateTimeInterface
     {
@@ -285,4 +305,26 @@ class User
 
         return $this;
     }
+
+    public function eraseCredentials(): void
+    {
+        // TODO: Implement eraseCredentials() method.
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
+    public function setPassword(
+        ?string $password,
+        UserPasswordHasherInterface $passwordHasher
+    ): void {
+        if (is_null($password)) {
+            $this->password = null;
+        }
+
+        $this->password = $passwordHasher->hash($this, $password);
+    }
+
 }

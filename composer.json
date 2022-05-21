@@ -12,6 +12,8 @@
         "doctrine/doctrine-bundle": "^2.6",
         "doctrine/doctrine-migrations-bundle": "^3.2",
         "doctrine/orm": "^2.12",
+        "gesdinet/jwt-refresh-token-bundle": "^1.1",
+        "lexik/jwt-authentication-bundle": "^2.15",
         "nelmio/api-doc-bundle": "^4.9",
         "nelmio/cors-bundle": "^2.2",
         "phpdocumentor/reflection-docblock": "^5.3",
@@ -32,6 +34,7 @@
         "symfony/security-bundle": "6.0.*",
         "symfony/serializer": "6.0.*",
         "symfony/twig-bundle": "6.0.*",
+        "symfony/uid": "6.0.*",
         "symfony/validator": "6.0.*",
         "symfony/yaml": "6.0.*",
         "twig/cssinliner-extra": "^3.4",
@@ -90,6 +93,9 @@
         }
     },
     "require-dev": {
-        "symfony/maker-bundle": "^1.42"
+        "doctrine/doctrine-fixtures-bundle": "^3.4",
+        "symfony/maker-bundle": "^1.43",
+        "symfony/stopwatch": "6.0.*",
+        "symfony/web-profiler-bundle": "6.0.*"
     }
 }
